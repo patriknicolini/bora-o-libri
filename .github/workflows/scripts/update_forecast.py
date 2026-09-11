@@ -30,9 +30,6 @@ def fetch_realtime_wind():
         soup = BeautifulSoup(r.text, "html.parser")
         text = soup.get_text(" ", strip=True)
 
-        # Cerca il blocco relativo a "Trieste" seguito da un valore di vento in nodi.
-        # Il formato tipico della pagina è qualcosa come:
-        # "Trieste (11:00) ... ENE 20kt" — proviamo diverse forme tollerando spazi/varianti.
         m = re.search(
             r"Trieste[^0-9]{0,80}?(\d{1,2}[:.]\d{2})[^0-9A-Z]{0,40}?"
             r"([NSEW]{1,3})\s*[- ]?\s*(\d{1,3})\s*kt",
@@ -61,9 +58,6 @@ def fetch_bulletin_excerpt():
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # La pagina cambia struttura di tanto in tanto: prendiamo il testo del
-        # blocco principale di previsione, tagliato a una lunghezza leggibile,
-        # invece di puntare a una classe CSS specifica che potrebbe rompersi.
         candidates = soup.find_all(["p", "div"], limit=400)
         best = ""
         for el in candidates:
