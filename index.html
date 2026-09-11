@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bora o Libri?</title>
+<style>
+:root{
+  --bg:#eef1f0; --surface:#ffffff; --ink:#16232b; --ink-soft:#4d5f68; --line:#d7ddd8;
+  --accent:#0e7c86; --accent-strong:#0a5b63;
+  --good:#2f7d4f; --good-wash:#e2f2e6;
+  --warn:#a8681f; --warn-wash:#f6ead2;
+  --bad:#a8402f; --bad-wash:#f5ded9;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1a1f; --surface:#16242b; --ink:#e8eef0; --ink-soft:#a9bcc2; --line:#284048;
+    --accent:#4fd3d9; --accent-strong:#8fe6ea;
+    --good:#7fd39a; --good-wash:#173325;
+    --warn:#e3ac5c; --warn-wash:#3a2b14;
+    --bad:#ef8a78; --bad-wash:#3a1e19;
+  }
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Source Sans 3", -apple-system, sans-serif;
+  padding:0 max(18px, calc((100% - 640px)/2)); padding-block:22px 48px;
+  font-size:18px;
+}
+h1{font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0; font-size:1.7rem;}
+.tabular{font-variant-numeric:tabular-nums;}
+a{color:var(--accent-strong);}
+
+header.masthead{padding-bottom:16px; border-bottom:3px solid var(--ink); margin-bottom:14px;}
+.masthead .place{color:var(--ink-soft); font-size:1rem; margin-top:6px;}
+.snapshot{margin-top:14px; font-size:0.9rem; color:var(--ink-soft); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+.snapshot b{color:var(--ink); font-weight:600;}
+.refresh-btn{
+  font-family:inherit; font-size:1rem; font-weight:700; cursor:pointer;
+  background:var(--accent); color:#fff; border:none; border-radius:100px;
+  padding:13px 22px; display:inline-flex; align-items:center; gap:6px; flex:none;
+  width:100%; justify-content:center;
+}
+.refresh-btn:hover{background:var(--accent-strong);}
+.refresh-btn:disabled{opacity:0.5; cursor:default;}
+.refresh-status{font-size:0.85rem; color:var(--ink-soft); width:100%; text-align:center;}
+
+.legend{font-size:0.85rem; color:var(--ink-soft); margin:16px 0 18px; line-height:1.5;}
+.legend .keys{display:flex; gap:16px; margin-bottom:6px; flex-wrap:wrap;}
+.legend span.key{display:inline-flex; align-items:center; gap:6px; font-weight:600;}
+.legend .dot{width:11px; height:11px; border-radius:50%; display:inline-block;}
+.legend .go .dot{background:var(--good);} .legend .warn .dot{background:var(--warn);} .legend .no .dot{background:var(--bad);}
+
+.day-row{display:flex; flex-direction:column; gap:14px; margin-bottom:26px;}
+.day-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px;}
+.day-head{display:flex; align-items:baseline; gap:10px; margin-bottom:14px;}
+.day-head .dname{font-weight:700; font-size:1.25rem; font-family:"Fraunces",serif;}
+.day-head .ddate{font-size:0.9rem; color:var(--ink-soft);}
+.halves{display:flex; flex-direction:column; gap:14px;}
+.day-half{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0;}
+.day-half + .day-half{border-top:1px solid var(--line);}
+.half-info{display:flex; flex-direction:column; gap:3px;}
+.half-label{font-size:0.75rem; letter-spacing:0.03em; text-transform:uppercase; color:var(--ink-soft); font-weight:700;}
+.pill{
+  font-size:0.85rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;
+  padding:7px 16px; border-radius:100px; flex:none; text-align:center; min-width:108px;
+}
+.pill.go{background:var(--good-wash); color:var(--good);}
+.pill.warn{background:var(--warn-wash); color:var(--warn);}
+.pill.no{background:var(--bad-wash); color:var(--bad);}
+.rain-val{font-size:1.5rem; font-weight:700; line-height:1.1;}
+.rain-sub{font-size:0.85rem; color:var(--ink-soft);}
+.wind-val{font-size:0.85rem; color:var(--ink-soft); margin-top:1px;}
+
+.placeholder{color:var(--ink-soft); font-size:1rem; padding:28px 4px; text-align:center;}
+footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:16px; line-height:1.65;}
+
+@media (min-width:480px){
+  .refresh-btn{width:auto;}
+  .refresh-status{width:auto; text-align:left;}
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+</head>
+<body>
+
+<header class="masthead">
+  <h1>Bora o Libri?</h1>
+  <p class="place">Trieste — pioggia giorno per giorno, per decidere se allestire il mercatino</p>
+  <div class="snapshot">
+    <span><b id="snapshotLabel">Caricamento…</b></span>
+    <button class="refresh-btn" id="refreshBtn" type="button">↻ Aggiorna ora</button>
+    <span class="refresh-status" id="refreshStatus"></span>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="keys">
+    <span class="key go"><span class="dot"></span>Vai</span>
+    <span class="key warn"><span class="dot"></span>Attenzione</span>
+    <span class="key no"><span class="dot"></span>Salta</span>
+  </div>
+  Il colore riguarda solo la pioggia. Il vento è mostrato come informazione — la valutazione la fai tu.
+</div>
+
+<div class="day-row" id="dayRow"><div class="placeholder">Sto scaricando le previsioni…</div></div>
+
+<footer>
+  Dati in diretta da <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (media di ECMWF, GFS e ICON — il "confronto tra ipotesi" è la differenza reale tra questi tre modelli).
+  Per il bollettino ufficiale della bora, non riportato da questi modelli, vedi anche <a href="https://www.osmer.fvg.it/previsioni.php?dettaglio=Z4" target="_blank" rel="noopener">OSMER FVG</a>.
+  Non sostituisce le allerte della Protezione Civile.
+  <br><br>
+  <em>Apri questo file direttamente nel browser (non nell'anteprima della chat) perché scarichi dati esterni.</em>
+</footer>
+
+<script>
+(function(){
+  var LAT = 45.6495, LON = 13.7768;
+  var refreshBtn = document.getElementById('refreshBtn');
+  var refreshStatus = document.getElementById('refreshStatus');
+  var snapshotLabel = document.getElementById('snapshotLabel');
+  var dayRow = document.getElementById('dayRow');
+
+  var DIRS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  function compass(deg){ if(deg==null) return '—'; return DIRS[Math.round(deg/22.5)%16]; }
+
+  function verdict(precipProbMax, precipSum){
+    if(precipProbMax>=65 || precipSum>=4) return 'no';
+    if(precipProbMax>=35 || precipSum>=1) return 'warn';
+    return 'go';
+  }
+  function pillText(v){ return v==='go' ? 'Vai' : (v==='no' ? 'Salta' : 'Attenzione'); }
+
+  function dayNameFor(idx, date){
+    var names = ['Oggi','Domani','Dopodomani'];
+    if(idx < names.length) return names[idx];
+    return ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'][date.getDay()];
+  }
+
+  function summarizeHalf(hourly, dayIdx, isMorning){
+    var out = {precipProbMax:0, precipSum:0, gustMax:0, gustDir:null};
+    var maxGustLocal = -1;
+    for(var h=0; h<24; h++){
+      if(isMorning && h>=14) continue;
+      if(!isMorning && h<14) continue;
+      var i = dayIdx*24 + h;
+      if(i >= hourly.time.length) continue;
+      var pp = hourly.precipitation_probability ? hourly.precipitation_probability[i] : 0;
+      var pr = hourly.precipitation ? hourly.precipitation[i] : 0;
+      var gust = hourly.wind_gusts_10m ? hourly.wind_gusts_10m[i] : 0;
+      var dir = hourly.wind_direction_10m ? hourly.wind_direction_10m[i] : null;
+      if(pp!=null) out.precipProbMax = Math.max(out.precipProbMax, pp);
+      if(pr!=null) out.precipSum += pr;
+      if(gust!=null && gust > maxGustLocal){ maxGustLocal = gust; out.gustDir = dir; }
+      if(gust!=null) out.gustMax = Math.max(out.gustMax, gust);
+    }
+    return out;
+  }
+
+  function modelSpread(modelHourly, dayIdx, isMorning, models){
+    var maxes = models.map(function(m){
+      var key = 'wind_gusts_10m_' + m;
+      var arr = modelHourly[key];
+      if(!arr) return null;
+      var mx = 0;
+      for(var h=0; h<24; h++){
+        if(isMorning && h>=14) continue;
+        if(!isMorning && h<14) continue;
+        var i = dayIdx*24 + h;
+        if(i>=arr.length) continue;
+        if(arr[i]!=null) mx = Math.max(mx, arr[i]);
+      }
+      return mx;
+    }).filter(function(v){ return v!=null; });
+    if(!maxes.length) return null;
+    return {min: Math.min.apply(null,maxes), max: Math.max.apply(null,maxes)};
+  }
+
+  function render(hourly, modelHourly, models){
+    var days = [];
+    var start = new Date(hourly.time[0]);
+    for(var d=0; d<7; d++){
+      var date = new Date(start); date.setDate(start.getDate()+d);
+      var halves = [];
+      ['Fino alle 14','Dopo le 14'].forEach(function(label, hi){
+        var isMorning = hi===0;
+        var s = summarizeHalf(hourly, d, isMorning);
+        var spread = modelSpread(modelHourly, d, isMorning, models);
+        var v = verdict(s.precipProbMax, s.precipSum);
+        var windTxt = spread ? (spread.min.toFixed(0) + '–' + spread.max.toFixed(0) + ' km/h') : s.gustMax.toFixed(0) + ' km/h';
+        halves.push({
+          label: label, verdict: v,
+          rainMain: s.precipSum.toFixed(1) + ' mm',
+          rainSub: Math.round(s.precipProbMax) + '% probabilità',
+          wind: 'vento ' + windTxt + ' ' + compass(s.gustDir)
+        });
+      });
+      days.push({
+        name: dayNameFor(d, date),
+        date: date.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'}),
+        halves: halves
+      });
+    }
+    dayRow.innerHTML = days.map(function(dd){
+      var hh = dd.halves.map(function(h){
+        return '<div class="day-half">'
+          + '<div class="half-info">'
+          + '<span class="half-label">' + h.label + '</span>'
+          + '<div class="rain-val tabular">' + h.rainMain + '</div>'
+          + '<div class="rain-sub">' + h.rainSub + '</div>'
+          + '<div class="wind-val tabular">' + h.wind + '</div>'
+          + '</div>'
+          + '<span class="pill ' + h.verdict + '">' + pillText(h.verdict) + '</span>'
+          + '</div>';
+      }).join('');
+      return '<div class="day-card"><div class="day-head"><span class="dname">' + dd.name + '</span><span class="ddate">' + dd.date + '</span></div><div class="halves">' + hh + '</div></div>';
+    }).join('');
+  }
+
+  async function loadForecast(){
+    refreshBtn.disabled = true;
+    refreshStatus.textContent = 'Aggiornamento in corso…';
+    try{
+      var models = ['ecmwf_ifs025','gfs_seamless','icon_seamless'];
+      var baseUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON
+        + '&hourly=precipitation_probability,precipitation,wind_gusts_10m,wind_direction_10m'
+        + '&timezone=Europe%2FRome&forecast_days=7';
+      var modelUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON
+        + '&hourly=wind_gusts_10m&models=' + models.join(',')
+        + '&timezone=Europe%2FRome&forecast_days=7';
+
+      var results = await Promise.all([fetch(baseUrl), fetch(modelUrl)]);
+      var baseRes = results[0], modelRes = results[1];
+      if(!baseRes.ok || !modelRes.ok) throw new Error('fetch failed');
+      var base = await baseRes.json();
+      var modelData = await modelRes.json();
+
+      render(base.hourly, modelData.hourly, models);
+      var now = new Date();
+      snapshotLabel.textContent = 'Aggiornato il ' + now.toLocaleDateString('it-IT', {day:'numeric', month:'long'}) + ' alle ' + now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+      refreshStatus.textContent = '';
+    }catch(e){
+      refreshStatus.textContent = 'Aggiornamento non riuscito — controlla la connessione e riprova';
+    }
+    refreshBtn.disabled = false;
+  }
+
+  refreshBtn.addEventListener('click', loadForecast);
+  loadForecast();
+})();
+</script>
+</body>
+</html>
