@@ -224,14 +224,18 @@ footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line
     refreshStatus.textContent = 'Aggiornamento in corso…';
     try{
       var models = ['ecmwf_ifs025','gfs_seamless','icon_seamless'];
+      var cacheBust = '&_=' + Date.now();
       var baseUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON
         + '&hourly=precipitation_probability,precipitation,wind_gusts_10m,wind_direction_10m'
-        + '&timezone=Europe%2FRome&forecast_days=7';
+        + '&timezone=Europe%2FRome&forecast_days=7' + cacheBust;
       var modelUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + LAT + '&longitude=' + LON
         + '&hourly=wind_gusts_10m&models=' + models.join(',')
-        + '&timezone=Europe%2FRome&forecast_days=7';
+        + '&timezone=Europe%2FRome&forecast_days=7' + cacheBust;
 
-      var results = await Promise.all([fetch(baseUrl), fetch(modelUrl)]);
+      var results = await Promise.all([
+        fetch(baseUrl, {cache:'no-store'}),
+        fetch(modelUrl, {cache:'no-store'})
+      ]);
       var baseRes = results[0], modelRes = results[1];
       if(!baseRes.ok || !modelRes.ok) throw new Error('fetch failed');
       var base = await baseRes.json();
@@ -239,8 +243,8 @@ footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line
 
       render(base.hourly, modelData.hourly, models);
       var now = new Date();
-      snapshotLabel.textContent = 'Aggiornato il ' + now.toLocaleDateString('it-IT', {day:'numeric', month:'long'}) + ' alle ' + now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-      refreshStatus.textContent = '';
+      snapshotLabel.textContent = 'Controllato adesso — ' + now.toLocaleDateString('it-IT', {day:'numeric', month:'long'}) + ', ' + now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+      refreshStatus.textContent = 'I modelli meteo si aggiornano alla fonte ogni 1–3 ore: controllare più spesso non dà numeri più nuovi.';
     }catch(e){
       refreshStatus.textContent = 'Aggiornamento non riuscito — controlla la connessione e riprova';
     }
