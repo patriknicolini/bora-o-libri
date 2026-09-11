@@ -51,30 +51,55 @@ def fetch_realtime_wind():
         return None
 
 
+OTHER_ZONE_MARKERS = [
+    "montagna", "alta pianura", "bassa pianura", "pianura", "carnia",
+    "prealpi", "alpi giulie", "collina",
+]
+
+
 def fetch_bulletin_excerpt():
-    """Legge un breve estratto testuale del bollettino ufficiale bora (zona Z4)."""
+    """Legge il testo del bollettino ufficiale bora specifico per la zona Costa
+    (quella che comprende Trieste), non un estratto generico della pagina."""
     try:
         r = requests.get(OSMER_BOLLETTINO_URL, headers=HEADERS, timeout=TIMEOUT)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "header", "footer"]):
+            tag.decompose()
+        text = soup.get_text(" ", strip=True)
 
-        candidates = soup.find_all(["p", "div"], limit=400)
-        best = ""
-        for el in candidates:
-            t = el.get_text(" ", strip=True)
-            if len(t) > len(best) and any(
-                kw in t.lower() for kw in ["bora", "vento", "pioggia", "previs"]
-            ):
-                best = t
-        if not best:
-            return None
-        excerpt = best[:600].rstrip()
-        if len(best) > 600:
-            excerpt += "…"
+        m = re.search(r"\bcosta\b", text, re.IGNORECASE)
+        if not m:
+            return _fallback_excerpt(text)
+
+        rest = text[m.end():].strip(" :-–—")
+        cut = len(rest)
+        for marker in OTHER_ZONE_MARKERS:
+            mm = re.search(r"\b" + re.escape(marker) + r"\b", rest, re.IGNORECASE)
+            if mm and mm.start() > 30:
+                cut = min(cut, mm.start())
+        excerpt = rest[:cut].strip()
+        if not excerpt:
+            return _fallback_excerpt(text)
+        if len(excerpt) > 700:
+            excerpt = excerpt[:700].rstrip() + "…"
         return excerpt
     except Exception as e:
         print(f"[warn] impossibile leggere il bollettino OSMER: {e}", file=sys.stderr)
         return None
+
+
+def _fallback_excerpt(text):
+    """Se non troviamo l'intestazione 'Costa', ripieghiamo sul paragrafo più
+    lungo che parla di meteo, meglio di niente ma meno preciso."""
+    m = re.search(
+        r"(?:[^.]{0,40}(?:bora|pioggia|temporal|nuvol)[^.]{0,400}\.)",
+        text,
+        re.IGNORECASE,
+    )
+    if m:
+        return m.group(0).strip()
+    return None
 
 
 def main():
