@@ -26,7 +26,7 @@ jobs:
         run: pip install requests beautifulsoup4
 
       - name: Scarica dati OSMER
-        run: python scripts/update_forecast.py
+        run: python .github/workflows/scripts/update_forecast.py
 
       - name: Commit e push se ci sono cambiamenti
         run: |
