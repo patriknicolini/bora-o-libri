@@ -76,14 +76,6 @@ header.masthead{padding-bottom:16px; border-bottom:3px solid var(--ink); margin-
 
 .placeholder{color:var(--ink-soft); font-size:1rem; padding:28px 4px; text-align:center;}
 
-.osmer-box{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 20px; margin-bottom:26px;}
-.osmer-box h2{font-family:"Fraunces",serif; font-size:1.05rem; margin:0 0 10px;}
-.osmer-real{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
-.osmer-real .val{font-size:1.3rem; font-weight:700;}
-.osmer-real .when{font-size:0.82rem; color:var(--ink-soft);}
-.osmer-bulletin{font-size:0.88rem; color:var(--ink-soft); line-height:1.55;}
-.osmer-empty{font-size:0.88rem; color:var(--ink-soft);}
-
 footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:16px; line-height:1.65;}
 
 @media (min-width:480px){
@@ -116,14 +108,8 @@ footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line
 
 <div class="day-row" id="dayRow"><div class="placeholder">Sto scaricando le previsioni…</div></div>
 
-<div class="osmer-box" id="osmerBox">
-  <h2>Dato reale da OSMER FVG</h2>
-  <div id="osmerContent" class="osmer-empty">Non ancora disponibile — arriva col primo aggiornamento automatico di GitHub Actions.</div>
-</div>
-
 <footer>
   Dati in diretta da <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (media di ECMWF, GFS e ICON — il "confronto tra ipotesi" è la differenza reale tra questi tre modelli).
-  Per il bollettino ufficiale della bora, non riportato da questi modelli, vedi anche <a href="https://www.osmer.fvg.it/previsioni.php?dettaglio=Z4" target="_blank" rel="noopener">OSMER FVG</a>.
   Non sostituisce le allerte della Protezione Civile.
   <br><br>
   <em>Apri questo file direttamente nel browser (non nell'anteprima della chat) perché scarichi dati esterni.</em>
@@ -265,35 +251,8 @@ footer{font-size:0.82rem; color:var(--ink-soft); border-top:1px solid var(--line
     refreshBtn.disabled = false;
   }
 
-  async function loadOsmerData(){
-    var box = document.getElementById('osmerContent');
-    try{
-      var res = await fetch('./data.json', {cache:'no-store'});
-      if(!res.ok) throw new Error('no data.json yet');
-      var data = await res.json();
-      var html = '';
-      if(data.realtime){
-        var rt = data.realtime;
-        html += '<div class="osmer-real"><span class="val tabular">' + rt.direction + ' '
-          + rt.windKt + ' kt (' + rt.windKmh + ' km/h)</span>'
-          + '<span class="when">misurato alle ' + rt.observedAtLabel + ' — ' + rt.station + '</span></div>';
-      }
-      if(data.bulletinExcerpt){
-        html += '<div class="osmer-bulletin">' + data.bulletinExcerpt + ' <a href="'
-          + (data.bulletinUrl || 'https://www.osmer.fvg.it/previsioni.php?dettaglio=Z4')
-          + '" target="_blank" rel="noopener">bollettino completo →</a></div>';
-      }
-      if(!html) throw new Error('dati vuoti');
-      box.className = '';
-      box.innerHTML = html;
-    }catch(e){
-      // resta il messaggio "non ancora disponibile" già presente nell'HTML
-    }
-  }
-
   refreshBtn.addEventListener('click', loadForecast);
   loadForecast();
-  loadOsmerData();
 })();
 </script>
 </body>
